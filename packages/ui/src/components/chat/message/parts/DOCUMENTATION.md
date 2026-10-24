@@ -482,6 +482,8 @@ the same owner.
   reference descriptions/comments opt into safe raw HTML with `allowRawHtml`.
   Author styles, application classes and active content remain forbidden.
   Restricted disclosures have a dedicated remark parser in ordinary chat.
+  A summary's own block markup (`<summary><h3>Findings</h3></summary>`) keeps
+  its elements under the document policy and stays source text in chat.
   Safe custom application links keep the app-link confirmation flow; only
   existing session routes qualify as `openchamber:` links. VS Code keeps
   session links inert.

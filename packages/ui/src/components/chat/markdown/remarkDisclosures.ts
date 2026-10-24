@@ -68,7 +68,13 @@ function disclosureEnd(source: string, start: number) {
   return { bodyEnd: source.length, end: source.length };
 }
 
-export function remarkDisclosures(this: Processor) {
+interface DisclosureOptions {
+  /** The document policy parses raw HTML, so a summary keeps its own block markup. */
+  allowRawHtml?: boolean;
+}
+
+export function remarkDisclosures(this: Processor, options: DisclosureOptions = {}) {
+  const allowRawHtml = options.allowRawHtml === true;
   const parse = (source: string): Root => {
     const tree = this.parse(source);
     if (!isMarkdownRoot(tree)) throw new Error('Disclosure parsing requires a Markdown root');
@@ -134,7 +140,13 @@ export function remarkDisclosures(this: Processor) {
       const first = summaryTree.children[0];
       const summary: Paragraph = {
         type: 'paragraph', data: { hName: 'summary' },
-        children: first?.type === 'paragraph' ? first.children : [{ type: 'text', value: summarySource }],
+        // A summary's block markup is one raw HTML node (`<h3>Findings</h3>`).
+        // The document policy keeps it as markup; chat shows the source as text.
+        children: first?.type === 'paragraph'
+          ? first.children
+          : allowRawHtml && first?.type === 'html'
+            ? [first]
+            : [{ type: 'text', value: summarySource }],
       };
       const disclosure: Disclosure = { type: 'ocDisclosure', data: { hName: 'details', hProperties: match[1] ? { open: true } : {} }, children: [summary, ...body.children] };
       let count = 1;

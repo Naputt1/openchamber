@@ -118,6 +118,15 @@ describe('Streamdown processing policy', () => {
     }
   });
 
+  test('renders block markup in a document summary and keeps it as text in chat', () => {
+    const source = '<details><summary><h3>Findings</h3></summary>\n\nBody\n\n</details>';
+    const result = render(source, true);
+    expect(result.querySelector('summary h3')?.textContent).toBe('Findings');
+    expect(result.querySelector('summary')?.textContent).toBe('Findings');
+    expect(result.textContent).toContain('Body');
+    expect(render(source).textContent).toContain('<h3>Findings</h3>');
+  });
+
   test('keeps raw document disclosure Markdown and nested unsafe HTML under the same policy', () => {
     const result = render('<details><summary>Review **ready**</summary>\n\n$100$ and $x$\n\n<img class="fixed" data-oc-media-source="file:///secret" src="safe.png">\n\n</details>', true);
     expect(result.querySelector('summary strong')?.textContent).toBe('ready');

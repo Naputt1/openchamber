@@ -87,7 +87,7 @@ function remarkVisibleBlocks() {
 
 function createOptions(allowRawHtml: boolean, isVSCode: boolean): Pick<StreamdownProps, 'remarkPlugins' | 'rehypePlugins'> {
   return {
-    remarkPlugins: [...Object.values(defaultRemarkPlugins), remarkDisclosures, remarkVisibleBlocks, remarkSessionLinks],
+    remarkPlugins: [...Object.values(defaultRemarkPlugins), [remarkDisclosures, { allowRawHtml }], remarkVisibleBlocks, remarkSessionLinks],
     rehypePlugins: [
       ...(allowRawHtml ? [defaultRehypePlugins.raw] : []),
       [rehypeMarkdownPolicy, { isVSCode }],
