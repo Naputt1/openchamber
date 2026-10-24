@@ -4,6 +4,7 @@ import type { Session } from '@/lib/opencode/model';
 import { useBtwStore } from '@/stores/useBtwStore';
 import { useGlobalSessionsStore } from '@/stores/useGlobalSessionsStore';
 import { getRememberedSessionDirectory, useSessionUIStore } from '@/sync/session-ui-store';
+import { openSessionFromToast } from '@/sync/session-navigation';
 
 import { openSession, openSessionFromRoute, openSessionLink } from './openSessionFromRoute';
 
@@ -153,6 +154,21 @@ describe('openSessionFromRoute', () => {
 
     expect(useSessionUIStore.getState().currentSessionId).toBe(BTW_FORK_ID);
     expect(useSessionUIStore.getState().currentSessionDirectory).toBe(PROJECT_DIR);
+  });
+
+  // The toast's "Open session" reaches this module through the opener it
+  // registers, so moving that registration out of the session store must keep
+  // the toast path working.
+  test('opens a toast target through the opener this module registers', async () => {
+    useSessions([
+      buildSession(BTW_PARENT_ID, PROJECT_DIR),
+      buildBtwFork(BTW_PARENT_ID, PROJECT_DIR),
+    ]);
+
+    openSessionFromToast(BTW_FORK_ID, PROJECT_DIR);
+
+    expect(useSessionUIStore.getState().currentSessionId).toBe(BTW_PARENT_ID);
+    expect(useBtwStore.getState().byParent[BTW_PARENT_ID]?.collapsed).toBe(false);
   });
 
   // A message link names one message inside the transcript that holds it. For
