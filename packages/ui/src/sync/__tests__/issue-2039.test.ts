@@ -186,7 +186,6 @@ mock.module("@/stores/useGlobalSessionsStore", () => ({
     }),
   },
   resolveGlobalSessionDirectory: () => null,
-  ensureGlobalSessionsLoaded: async () => null,
 }))
 
 mock.module("@/stores/useSessionFoldersStore", () => ({

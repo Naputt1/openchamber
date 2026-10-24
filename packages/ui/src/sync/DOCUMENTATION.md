@@ -1184,10 +1184,12 @@ have neither scrolled nor sent in the meantime. Mobile skips that search because
 loads history only on an explicit tap.
 
 A session target that carries no message — a web route, a notification
-click, a toast's "Open session" — opens through `openSession`
+click, a toast's "Open session", the desktop `openchamber:open-session` event in
+either the main window or the mini-chat window — opens through `openSession`
 (`lib/router/openSessionFromRoute.ts`), which resolves its directory and, for
-a `/btw` fork, opens the parent with its btw panel showing. A message link
-keeps its named session (below).
+a `/btw` fork, opens the parent with its btw panel showing. That module also
+registers the opener a toast uses, so the session store keeps no dependency on
+the router. A message link keeps its named session (below).
 
 A message link opens the session on one message instead. Links are built and
 parsed in `lib/sessionLinks.ts`: the web copies `?session=<id>&message=<id>` on
@@ -1301,8 +1303,9 @@ independently of animation frames across all chat runtimes.
 
 ### Why a `/btw` fork opens its parent and not itself
 
-Every producer that opens a session by id — a route, a desktop session event, a
-notification click, a toast, a native deep link — goes through `openSession`. A
+Every producer that opens a session by id — a route, a desktop session event
+(the main window and the mini-chat window both), a notification click, a toast,
+a native deep link — goes through `openSession`. A
 fork's id is real, but the fork is a side transcript rendered inside its
 parent's btw panel and no list shows it, so selecting it directly would leave
 the reader in a session with no panel and no way back. The parent's panel is

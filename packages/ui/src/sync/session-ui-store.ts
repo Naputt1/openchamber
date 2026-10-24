@@ -93,8 +93,7 @@ import { useSelectionStore } from "./selection-store"
 import { getViewportSessionMemory, useViewportStore, viewportSessionKey } from "./viewport-store"
 import { useSessionWorktreeStore } from "./session-worktree-store"
 import { getAttachedSessionDirectory } from "./session-worktree-contract"
-import { setSessionOpener } from "./session-navigation"
-import { openSession } from "@/lib/router/openSessionFromRoute"
+
 import { getRuntimeKey, isTransientRuntimeKey } from "@/lib/runtime-switch"
 import { clearLastActiveSession, persistLastActiveSession, readLastActiveSession } from "./last-session-cache"
 import { persistWorktreeTopology, readPersistedWorktreeTopology } from "./worktree-topology-cache"
@@ -2427,10 +2426,6 @@ export const useSessionUIStore = create<SessionUIState>()((set, get) => ({
     }
   },
 }))
-
-setSessionOpener((sessionID, directory) => {
-  void openSession(sessionID, { directory })
-})
 
 // Write-through persist of the worktree map whenever discovery refreshes it.
 // Reference-equality guard filters hot session updates; the serialized

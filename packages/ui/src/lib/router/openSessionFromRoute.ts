@@ -3,6 +3,7 @@ import { getBtwOriginalSessionID } from '@/lib/sessionBtwMetadata';
 import { ensureGlobalSessionsLoaded, resolveGlobalSessionDirectory, useGlobalSessionsStore } from '@/stores/useGlobalSessionsStore';
 import { useBtwStore } from '@/stores/useBtwStore';
 import { useSessionUIStore } from '@/sync/session-ui-store';
+import { setSessionOpener } from '@/sync/session-navigation';
 import { requestMessageFocus } from './messageFocus';
 
 export type SessionOpenOptions = {
@@ -113,3 +114,10 @@ export function openSessionLink(sessionId: string, messageId: string | null): Pr
 export function openSessionFromRoute(sessionId: string): Promise<void> {
   return openSession(sessionId);
 }
+
+// The toast's "Open session" reaches this module through the dependency-free
+// `session-navigation` seam, not by having the session store import the router
+// it is itself imported by.
+setSessionOpener((sessionId, directory) => {
+  void openSession(sessionId, { directory });
+});

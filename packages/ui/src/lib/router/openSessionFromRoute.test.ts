@@ -5,7 +5,7 @@ import { useBtwStore } from '@/stores/useBtwStore';
 import { useGlobalSessionsStore } from '@/stores/useGlobalSessionsStore';
 import { getRememberedSessionDirectory, useSessionUIStore } from '@/sync/session-ui-store';
 
-import { openSession, openSessionFromRoute } from './openSessionFromRoute';
+import { openSession, openSessionFromRoute, openSessionLink } from './openSessionFromRoute';
 
 const SESSION_ID = 'ses_linear_open';
 const PROJECT_DIR = '/projects/linear-from-url';
@@ -153,6 +153,21 @@ describe('openSessionFromRoute', () => {
 
     expect(useSessionUIStore.getState().currentSessionId).toBe(BTW_FORK_ID);
     expect(useSessionUIStore.getState().currentSessionDirectory).toBe(PROJECT_DIR);
+  });
+
+  // A message link names one message inside the transcript that holds it. For
+  // a `/btw` answer that transcript is the fork, so the fork opens alone.
+  test('keeps a /btw fork when a message link names it', async () => {
+    useSessions([
+      buildSession(BTW_PARENT_ID, PROJECT_DIR),
+      buildBtwFork(BTW_PARENT_ID, PROJECT_DIR),
+    ]);
+
+    await openSessionLink(BTW_FORK_ID, 'msg_btw_answer');
+
+    expect(useSessionUIStore.getState().currentSessionId).toBe(BTW_FORK_ID);
+    expect(useSessionUIStore.getState().currentSessionDirectory).toBe(PROJECT_DIR);
+    expect(useBtwStore.getState().byParent[BTW_PARENT_ID]).toBeUndefined();
   });
 
   // A desktop notification carries the directory of the session it names, so
