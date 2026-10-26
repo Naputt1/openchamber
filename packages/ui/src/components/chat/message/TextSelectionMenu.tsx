@@ -213,6 +213,15 @@ const TextSelectionMenuImpl: React.FC<TextSelectionMenuProps> = ({ containerRef,
     isMenuVisibleRef.current = false;
   }, []);
 
+  // A retained timeline is hidden with React Activity, which keeps its state
+  // and DOM but tears down its effects. The popup is portalled outside that
+  // DOM, so it would stay on screen over whatever session replaced this one,
+  // with no listeners left to dismiss it. Closing here also keeps it closed
+  // when the timeline is shown again.
+  React.useEffect(() => () => {
+    hideMenu();
+  }, [hideMenu]);
+
   // Listener-facing mirror of the composer's comment state: the document
   // listeners below must not clear the quote highlight for taps inside the
   // comment shell, which lives outside this menu's DOM.

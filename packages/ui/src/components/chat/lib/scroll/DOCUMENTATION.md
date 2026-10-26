@@ -61,6 +61,14 @@ empty and draft placeholders hide the pool without replacing its host. Leaving
 the chat column releases the pool. Each stored JSX entry supplies its own
 `ChatColumnSessionContext`, so hidden messages retain their session identity.
 
+A retained entry keeps its DOM and state when hidden, but React tears down its
+effects, so its listeners stop. A portal is not inside that hidden DOM: the
+selection menu renders its popup into `document.body`, and it would stay on
+screen over the session that replaced it, with no listener left to dismiss it.
+`TextSelectionMenu` closes itself from its effect cleanup, which runs when
+Activity hides the timeline and when the list unmounts; a comment typed but not
+attached is dropped with it.
+
 The scroll hook and timeline controller remain shared by the column. List
 registration names the composite session key; a late detach from a hidden list
 cannot clear the selected list. MessageList's imperative ref cleanup clears
@@ -82,6 +90,14 @@ This is the existing session-keyed replacement point. Retaining it preserves
 the list, turn state and mounted Markdown without duplicating the composer or
 the column's scroll controller. KeepAlive renders entries in stable key order;
 LRU promotion changes visibility without moving retained iframe DOM.
+
+### Why popups close from effect cleanup
+
+React Activity hides a retained timeline's host DOM, not portals rendered
+outside it. The selection menu's popup therefore cannot rely on the timeline
+being hidden to leave the screen, and while hidden it has no document listeners
+to see an outside press. Effect cleanup is the one hook React runs on both hide
+and unmount; the preserved state stays closed when the entry is shown again.
 
 ## Row identity
 

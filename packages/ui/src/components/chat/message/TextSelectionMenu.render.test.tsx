@@ -7,6 +7,7 @@ import type { Session } from '@/lib/opencode/model';
 import { I18nProvider } from '@/lib/i18n';
 import { SyncProvider } from '@/sync/sync-context';
 import { getSyncChildStores } from '@/sync/sync-refs';
+import { KeepAlive } from '@/components/ui/KeepAlive';
 import { ChatColumnSessionContext } from '../chatColumnSession';
 import { dispatchFrameSelection } from './frameSelection';
 
@@ -69,13 +70,20 @@ describe('TextSelectionMenu render subscriptions', () => {
   const stage = (sessions: Session[]) => act(async () => {
     store().setState({ session: sessions });
   });
-  const render = (frameSelections = false) => act(async () => root.render(
+  const menu = (frameSelections: boolean) => (
+    <React.Profiler id="menu" onRender={() => { renders += 1; }}>
+      <TextSelectionMenu containerRef={containerRef} readingKey="message-1" canReadAloud={false} frameSelections={frameSelections} />
+    </React.Profiler>
+  );
+  const render = (frameSelections = false, retainedKey: string | null = null) => act(async () => root.render(
     <SyncProvider sdk={sdk} directory={directory}>
       <I18nProvider>
         <ChatColumnSessionContext.Provider value={column}>
-          <React.Profiler id="menu" onRender={() => { renders += 1; }}>
-            <TextSelectionMenu containerRef={containerRef} readingKey="message-1" canReadAloud={false} frameSelections={frameSelections} />
-          </React.Profiler>
+          {retainedKey === null ? menu(frameSelections) : (
+            <KeepAlive cacheKey={retainedKey} capacity={4}>
+              {menu(frameSelections)}
+            </KeepAlive>
+          )}
         </ChatColumnSessionContext.Provider>
       </I18nProvider>
     </SyncProvider>,
@@ -131,6 +139,27 @@ describe('TextSelectionMenu render subscriptions', () => {
     expect(document.body.textContent).toContain('Comment');
 
     await report('');
+    expect(document.body.textContent).not.toContain('Comment');
+    containerRef.current = null;
+  });
+
+  test('an open menu closes when its retained timeline is hidden and stays closed on return', async () => {
+    const host = document.createElement('div');
+    const frame = document.createElement('iframe');
+    host.appendChild(frame);
+    document.body.appendChild(host);
+    containerRef.current = host;
+    await render(true, 'session-1');
+
+    await act(async () => {
+      dispatchFrameSelection(frame, { text: 'picked words', rect: { top: 10, left: 20, width: 80, height: 16 } });
+    });
+    expect(document.body.textContent).toContain('Comment');
+
+    await render(true, 'session-2');
+    expect(document.body.textContent).not.toContain('Comment');
+
+    await render(true, 'session-1');
     expect(document.body.textContent).not.toContain('Comment');
     containerRef.current = null;
   });
