@@ -2111,15 +2111,10 @@ export const FilesView: React.FC<FilesViewProps> = ({ mode = 'full', visible = t
       setShowMobilePageContent(true);
     }
 
-    // Desktop: binary images are loaded via readFileBinary (data URL).
-    if (runtime.isDesktop && selectedIsImage && !isSvg) {
-      setFileContent('');
-      setDraftContent('');
-      return;
-    }
-
-    // Web: binary images should not be read as utf8.
-    if (!runtime.isDesktop && selectedIsImage && !isSvg) {
+    // An image's bytes never pass through the text path: the reader effect owns
+    // them and turns them into the source the viewer shows, so the viewer owns
+    // the wait for that source too.
+    if (selectedIsImage && !isSvg) {
       setFileContent('');
       setDraftContent('');
       setLoadedFilePath(node.path);
@@ -2235,7 +2230,7 @@ export const FilesView: React.FC<FilesViewProps> = ({ mode = 'full', visible = t
           setFileLoading(false);
         }
       });
-  }, [applyLoadedTextContent, expandPaths, isMobile, loadDirectory, readFile, readFileStat, root, runtime.isDesktop, searchQuery, setSelectedPath, t]);
+  }, [applyLoadedTextContent, expandPaths, isMobile, loadDirectory, readFile, readFileStat, root, searchQuery, setSelectedPath, t]);
 
   const ensurePathVisible = React.useCallback(async (targetPath: string, includeTarget: boolean) => {
     if (!visible || !root) {
@@ -3841,7 +3836,15 @@ export const FilesView: React.FC<FilesViewProps> = ({ mode = 'full', visible = t
   // for both the docked and the fullscreen viewer, so they cannot drift.
   const renderArtifactPreview = (file: FileNode): React.ReactNode => {
     if (isSelectedImage && !isSvgSource) {
-      return <ImageArtifact src={imageSrc} name={file.name} sizeBytes={artifactSize} neighbors={imageNeighbors} />;
+      return (
+        <ImageArtifact
+          src={imageSrc}
+          name={file.name}
+          sizeBytes={artifactSize}
+          neighbors={imageNeighbors}
+          download={downloadButton}
+        />
+      );
     }
     if (isSelectedPdf) return renderPdfPreview(file);
     if (isSelectedMedia) {

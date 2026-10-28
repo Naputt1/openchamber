@@ -160,7 +160,9 @@ a two-finger touch pinch, and double-click between fit and 1:1, anchored at
 the pointer; a zoomed image larger than the viewer pans by mouse drag;
 `imageZoom.ts` holds the scale math; round arrows fixed to the viewer's
 edges, and the arrow keys while the viewer has focus and the image is at fit,
-show the previous and next image of the same folder, see below),
+show the previous and next image of the same folder, see below; a loading row
+until its source arrives, and a stated failure with the download when the
+image cannot be decoded),
 `MediaArtifact` (native audio/video
 element, duration and dimensions once metadata loads, a stated failure when
 the runtime cannot decode the codec), `FontArtifact` (a specimen under a
@@ -203,6 +205,17 @@ state. One
 renewal per ten seconds; a renewal that returns the same URL, or fails, shows
 "cannot be played". A file changed on disk bumps the revision, which gives the
 preview a new URL and loads the new bytes.
+
+### Why the image viewer shows its own loading state
+
+`FilesView` knows when an image is selected, not when its bytes are read: a
+separate effect turns them into the source the viewer shows. The viewer owns
+that wait, so it shows a spinner, then the image, and says so when the runtime
+cannot decode the source. The panel's loading row belongs to text, whose read
+fills the editor. Holding `fileLoading` until the source existed was the
+alternative: the wait would then depend on the reader effect, which runs on its
+own inputs, so a later selection or visibility change could leave the panel
+waiting for a read that will not start again.
 
 ### Why the URL is held and not rebuilt with every new token
 

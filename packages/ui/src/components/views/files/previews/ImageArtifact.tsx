@@ -43,6 +43,7 @@ type ImageArtifactProps = {
   name: string;
   sizeBytes: number | null;
   neighbors?: { previous: ImageNeighbor; next: ImageNeighbor } | null;
+  download?: React.ReactNode;
 };
 
 /**
@@ -56,14 +57,19 @@ type ImageArtifactProps = {
  * With `neighbors`, arrows at the viewer's edges and the arrow keys (while the
  * viewer has focus and the image is at fit; zoomed, the keys keep scrolling)
  * show the previous and next image of the folder.
+ *
+ * `FilesView` reads the bytes, so the source arrives after the viewer: until
+ * then the viewer waits with a spinner, and an image the runtime cannot decode
+ * says so above a download instead of showing a broken icon.
  */
-const ImageArtifactView: React.FC<ImageArtifactProps> = ({ src, name, sizeBytes, neighbors }) => {
+const ImageArtifactView: React.FC<ImageArtifactProps> = ({ src, name, sizeBytes, neighbors, download }) => {
   const { t, direction } = useI18n();
   // null is fit: the scale then follows the viewer's size.
   const [scale, setScale] = React.useState<number | null>(null);
   const [natural, setNatural] = React.useState<Size | null>(null);
   const [viewport, setViewport] = React.useState<Size | null>(null);
   const [dragging, setDragging] = React.useState(false);
+  const [failed, setFailed] = React.useState(false);
   const viewportRef = React.useRef<HTMLDivElement | null>(null);
   const imageRef = React.useRef<HTMLImageElement | null>(null);
   const anchorRef = React.useRef<ZoomAnchor | null>(null);
@@ -307,46 +313,65 @@ const ImageArtifactView: React.FC<ImageArtifactProps> = ({ src, name, sizeBytes,
         )}
       />
       <div className="relative flex min-h-0 flex-1 flex-col" onKeyDown={handleKeyDown}>
-        <div
-          ref={viewportRef}
-          tabIndex={neighbors ? 0 : undefined}
-          className={cn(
-            'min-h-0 flex-1 overflow-auto outline-none',
-            canPan && (dragging ? 'cursor-grabbing' : 'cursor-grab'),
-          )}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerEnd}
-          onPointerCancel={handlePointerEnd}
-          onDoubleClick={handleDoubleClick}
-        >
-          <div
-            className={cn(
-              'flex items-center justify-center p-3',
-              scale === null ? 'h-full w-full' : 'min-h-full min-w-full w-max',
-            )}
-          >
-            <img
-              ref={imageRef}
-              key={src}
-              src={src}
-              alt={name}
-              draggable={false}
-              onLoad={(event) => {
-                const image = event.currentTarget;
-                setNatural({ width: image.naturalWidth, height: image.naturalHeight });
-              }}
-              style={scale !== null && natural
-                ? { width: natural.width * scale, height: natural.height * scale }
-                : undefined}
-              className={cn(
-                'select-none rounded-md border border-border/30 bg-primary/10',
-                scale === null ? 'max-h-full max-w-full object-contain' : 'max-w-none shrink-0',
-              )}
-            />
+        {failed ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+            <div className="max-w-md typography-ui text-muted-foreground">{t('filesView.artifact.image.unreadable')}</div>
+            {download}
           </div>
-        </div>
-        {neighbors ? (
+        ) : (
+          <>
+            <div
+              ref={viewportRef}
+              tabIndex={neighbors ? 0 : undefined}
+              className={cn(
+                'min-h-0 flex-1 overflow-auto outline-none',
+                canPan && (dragging ? 'cursor-grabbing' : 'cursor-grab'),
+              )}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerEnd}
+              onPointerCancel={handlePointerEnd}
+              onDoubleClick={handleDoubleClick}
+            >
+              <div
+                className={cn(
+                  'flex items-center justify-center p-3',
+                  scale === null ? 'h-full w-full' : 'min-h-full min-w-full w-max',
+                )}
+              >
+                {src ? (
+                  <img
+                    ref={imageRef}
+                    key={src}
+                    src={src}
+                    alt={name}
+                    draggable={false}
+                    onLoad={(event) => {
+                      const image = event.currentTarget;
+                      setNatural({ width: image.naturalWidth, height: image.naturalHeight });
+                    }}
+                    onError={() => setFailed(true)}
+                    style={scale !== null && natural
+                      ? { width: natural.width * scale, height: natural.height * scale }
+                      : undefined}
+                    className={cn(
+                      'select-none rounded-md border border-border/30 bg-primary/10',
+                      scale === null ? 'max-h-full max-w-full object-contain' : 'max-w-none shrink-0',
+                      natural ? undefined : 'opacity-0',
+                    )}
+                  />
+                ) : null}
+              </div>
+            </div>
+            {natural ? null : (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 typography-ui text-muted-foreground">
+                <Icon name="loader-4" className="size-4 animate-spin" />
+                {t('filesView.state.loading')}
+              </div>
+            )}
+          </>
+        )}
+        {!failed && neighbors ? (
           <>
             <button
               type="button"
